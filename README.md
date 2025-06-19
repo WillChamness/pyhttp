@@ -46,6 +46,7 @@ Note that some distributions name the Python executable `python` instead of `pyt
     - A better approach is to send the file in 1024 byte chunks.
 2. Keeping connections alive
     - Browsers will often send a `Keep-Alive` request in the HTTP header. This implementation ignores this request and closes the connection after sending data.
+    - This does not stop the user from accessing any file that is being served, but the browser will have to create a new TCP connection every time a file is transferred
 3. Most MIME types will be reported incorrectly
     - This implementation only reports a small subsection of the different MIME types.
     - By default, it will report `text/plain` if the server encounters an unknown type.
