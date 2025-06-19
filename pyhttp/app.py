@@ -68,15 +68,15 @@ def handle_http_req(conn: socket.socket, directory_root: str) -> None:
 
 
 def handle_get(request_uri: str, directory_root: str) -> bytes:
-    data: tuple[str, str]|None = read_file(request_uri, directory_root)
+    data: tuple[bytes, str]|None = read_file(request_uri, directory_root)
     if data is None:
         return not_found()
     
-    file_str, file_extension = data
-    return ok(file_str, file_extension)
+    file_encoded, file_extension = data
+    return ok(file_encoded, file_extension)
 
 
-def read_file(uri: str, directory_root: str) -> tuple[str, str]|None:
+def read_file(uri: str, directory_root: str) -> tuple[bytes, str]|None:
     # check that the path stays within http root
     stack: Stack[str] = Stack()
     try:
@@ -98,15 +98,21 @@ def read_file(uri: str, directory_root: str) -> tuple[str, str]|None:
     if os.path.isdir(path):
         return read_file(uri + "/index.html", directory_root)
 
+    result: bytes
+    if is_file_binary(path):
+        with open(path, "rb") as f:
+            result = b"".join(f.readlines())
+    else:
+        with open(path, "r") as f:
+            result = "".join(f.readlines()).encode()
+
     file_extension: str
-    file: TextIOWrapper = open(path, "r")
-    result: str = "".join(file.readlines())
-    _, file_extension = os.path.splitext("./" + uri)
-    file.close()
+    _, file_extension = os.path.splitext(path)
 
     return (result, file_extension)
 
-def ok(data: str, file_extension: str) -> bytes:
+
+def ok(data: bytes, file_extension: str) -> bytes:
     content_types: dict[str, str] = {
         ".html": "text/html",
         ".css": "text/css",
@@ -125,10 +131,9 @@ def ok(data: str, file_extension: str) -> bytes:
     response_header: bytes = b"HTTP/1.1 200 OK\r\n"
     content_type: bytes = f"Content-Type: {content_types.get(file_extension, 'text/plain')}\r\n".encode()
 
-    body: bytes = data.encode()
-    content_length: bytes = f"Content-Length: {len(body)}\r\n\r\n".encode()
+    content_length: bytes = f"Content-Length: {len(data)}\r\n\r\n".encode()
 
-    response: bytes = response_header + content_type + content_length + body
+    response: bytes = response_header + content_type + content_length + data
     return response
 
 
@@ -139,6 +144,15 @@ def not_found() -> bytes:
     content_length: bytes = (f"Content-Length: {len(body)}\r\n\r\n").encode()
 
     return response_header + content_type + content_length + body
+
+
+def is_file_binary(file_path: str) -> bool:
+    try:
+        with open(file_path, 'r') as f:
+            f.read(16)
+            return False
+    except UnicodeDecodeError:
+            return True
 
 
 def run(listen_addr: str, listen_port: int, directory_root: str) -> None:
