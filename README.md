@@ -42,7 +42,7 @@ Note that some distributions name the Python executable `python` instead of `pyt
 ## Known Limitations
 
 1. Sending large files
-    - This implementation loads the entire file into memory before sending it out. For multi-gigabyte files, this approach is unrealistic.
+    - This implementation loads the entire file into memory before sending it out. For multi-gigabyte files, this approach is impractical.
     - A better approach is to send the file in 1024 byte chunks.
 2. Keeping connections alive
     - Browsers will often send a `Keep-Alive` request in the HTTP header. This implementation ignores this request and closes the connection after sending data.
