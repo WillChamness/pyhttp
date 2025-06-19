@@ -49,3 +49,4 @@ Note that some distributions name the Python executable `python` instead of `pyt
 3. Most MIME types will be reported incorrectly
     - This implementation only reports a small subsection of the different MIME types.
     - By default, it will report `text/plain` if the server encounters an unknown type.
+4. IPv6 is not supported
