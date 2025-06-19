@@ -42,10 +42,10 @@ Note that some distributions name the Python executable `python` instead of `pyt
 ## Known Limitations
 
 1. Sending large files
-- This implementation loads the entire file into memory before sending it out. For multi-gigabyte files, this approach is unrealistic.
-- A better approach is to send the file in 1024 byte chunks.
+    - This implementation loads the entire file into memory before sending it out. For multi-gigabyte files, this approach is unrealistic.
+    - A better approach is to send the file in 1024 byte chunks.
 2. Keeping connections alive
-- Browsers will often send a `Keep-Alive` request in the HTTP header. This implementation ignores this request and closes the connection after sending data.
+    - Browsers will often send a `Keep-Alive` request in the HTTP header. This implementation ignores this request and closes the connection after sending data.
 3. Most MIME types will be reported incorrectly
-- This implementation only reports a small subsection of the different MIME types.
-- By default, it will report `text/plain` if the server encounters an unknown type.
+    - This implementation only reports a small subsection of the different MIME types.
+    - By default, it will report `text/plain` if the server encounters an unknown type.
