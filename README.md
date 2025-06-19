@@ -12,9 +12,7 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   -b ADDRESS, --bind ADDRESS
-                        specify alternate bind address (default: all
-                        interfaces)
+                        specify alternate bind address (default: all interfaces)
   -d DIRECTORY, --directory DIRECTORY
-                        specify alternate directory (default: current
-                        directory)
+                        specify alternate directory (default: current directory)
 ```
