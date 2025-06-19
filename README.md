@@ -47,3 +47,5 @@ ExecStart=/usr/bin/python3 -m pyhttp 8080 --bind 127.0.0.1 --directory /var/www/
 [Install]
 WantedBy=multi-user.target
 ```
+
+Note that some distributions name the Python executable `python` instead of `python3`.
