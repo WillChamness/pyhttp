@@ -3,9 +3,11 @@ from io import TextIOWrapper
 import os
 import socket
 import threading
-from typing import Generic, TypeVar, Literal
+from typing import Generic, TypeVar
 
 T = TypeVar("T")
+
+
 
 class HttpMethods:
     GET = "GET"
@@ -32,12 +34,12 @@ class Stack(Generic[T]):
 
 
 
-def handle_connection(conn: socket.socket, source_addr: str, source_port: int) -> None:
-    handle_http_req(conn)
+def handle_connection(conn: socket.socket, source_addr: str, source_port: int, directory_root: str) -> None:
+    handle_http_req(conn, directory_root)
     conn.close()
 
 
-def handle_http_req(conn: socket.socket) -> None:
+def handle_http_req(conn: socket.socket, directory_root: str) -> None:
     MAX_MSG_SIZE: int = 8192 # 8192 bytes
     encoded_msg: bytes = conn.recv(MAX_MSG_SIZE)
     decoded_msg: str = encoded_msg.decode()
@@ -58,15 +60,15 @@ def handle_http_req(conn: socket.socket) -> None:
 
     data: bytes
     if request_method == HttpMethods.GET:
-        data = handle_get(request_uri)
+        data = handle_get(request_uri, directory_root)
     else:
         data = not_found()
 
     conn.send(data)
 
 
-def handle_get(request_uri: str) -> bytes:
-    data: tuple[str, str]|None = read_file(request_uri)         
+def handle_get(request_uri: str, directory_root: str) -> bytes:
+    data: tuple[str, str]|None = read_file(request_uri, directory_root)
     if data is None:
         return not_found()
     
@@ -74,7 +76,7 @@ def handle_get(request_uri: str) -> bytes:
     return ok(file_str, file_extension)
 
 
-def read_file(uri: str) -> tuple[str, str]|None:
+def read_file(uri: str, directory_root: str) -> tuple[str, str]|None:
     # check that the path stays within http root
     stack: Stack[str] = Stack()
     try:
@@ -88,15 +90,16 @@ def read_file(uri: str) -> tuple[str, str]|None:
     except RuntimeError:
         return None
 
-    if not os.path.exists("./" + uri):
+    path: str = directory_root + uri
+
+    if not os.path.exists(path):
         return None
 
-    if os.path.isdir("./" + uri):
-        uri += "/index.html"
+    if os.path.isdir(path):
+        return read_file(uri + "/index.html", directory_root)
 
     file_extension: str
-
-    file: TextIOWrapper = open("./" + uri, "r")
+    file: TextIOWrapper = open(path, "r")
     result: str = "".join(file.readlines())
     _, file_extension = os.path.splitext("./" + uri)
     file.close()
@@ -138,9 +141,9 @@ def not_found() -> bytes:
     return response_header + content_type + content_length + body
 
 
-def run(listen_addr: str, listen_port: int) -> None:
+def run(listen_addr: str, listen_port: int, directory_root: str) -> None:
     print(f"Listening on {listen_addr}:{listen_port}")
-    print(f"Serving files at '{os.getcwd()}'")
+    print(f"Serving files at '{os.path.abspath(directory_root)}'")
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.bind((listen_addr, listen_port))
     server.listen()
@@ -148,7 +151,7 @@ def run(listen_addr: str, listen_port: int) -> None:
     try:
         while True:
             conn, client = server.accept()
-            thread = threading.Thread(target=handle_connection, args=(conn, client[0], client[1]))
+            thread = threading.Thread(target=handle_connection, args=(conn, client[0], client[1], directory_root))
             thread.start()
             print(f"Received request from {client[0]}:{client[1]}")
     except KeyboardInterrupt:
@@ -156,4 +159,4 @@ def run(listen_addr: str, listen_port: int) -> None:
 
 
 if __name__ == "__main__":
-    run("127.0.0.1", 3000)
+    run("127.0.0.1", 3000, ".")

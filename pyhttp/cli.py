@@ -1,4 +1,5 @@
 import argparse
+import os
 from pyhttp import app
 
 def parse_args() -> None:
@@ -6,6 +7,7 @@ def parse_args() -> None:
 
     parser.add_argument("port", type=int, nargs="?", default=8000, help="specify alternate port (default 8000)")
     parser.add_argument("-b", "--bind", type=str, required=False, default="0.0.0.0", metavar="ADDRESS", help="specify alternate bind address (default: all interfaces)")
+    parser.add_argument("-d", "--directory", type=str, required=False, default=".", metavar="DIRECTORY", help="specify alternate directory (default: current directory)")
 
     args = parser.parse_args()
 
@@ -27,7 +29,11 @@ def parse_args() -> None:
             print("Bind address must be a valid IPv4 address")
             exit(1)
 
-    app.run(args.bind, args.port)
+    if not os.path.isdir(args.directory):
+        print(f"'{args.directory}' is not a directory")
+        exit(1)
+
+    app.run(args.bind, args.port, args.directory)
 
 
 
