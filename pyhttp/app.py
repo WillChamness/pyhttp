@@ -72,8 +72,8 @@ def handle_get(request_uri: str, directory_root: str) -> bytes:
     if data is None:
         return not_found()
     
-    file_encoded, file_extension = data
-    return ok(file_encoded, file_extension)
+    file_encoded, content_type = data
+    return ok(file_encoded, content_type)
 
 
 def read_file(uri: str, directory_root: str) -> tuple[bytes, str]|None:
@@ -109,10 +109,6 @@ def read_file(uri: str, directory_root: str) -> tuple[bytes, str]|None:
     file_extension: str
     _, file_extension = os.path.splitext(path)
 
-    return (result, file_extension)
-
-
-def ok(data: bytes, file_extension: str) -> bytes:
     content_types: dict[str, str] = {
         ".html": "text/html",
         ".css": "text/css",
@@ -123,18 +119,23 @@ def ok(data: bytes, file_extension: str) -> bytes:
         ".png": "image/png",
         ".mp3": "audio/mpeg",
         ".mp4": "video/mp4",
-        "": "text/plain",
         ".xml": "application/xml",
         ".json": "application/json",
+        ".exe": "application/octet-stream",
+        "": "application/octet-stream" if is_file_binary(path) else "text/plain",
     }
 
+    return (result, content_types.get(file_extension, "text/plain"))
+
+
+def ok(data: bytes, content_type: str) -> bytes:
     response_header: bytes = b"HTTP/1.1 200 OK\r\n"
-    content_type: bytes = f"Content-Type: {content_types.get(file_extension, 'text/plain')}\r\n".encode()
+    content_type_header: bytes = f"Content-Type: {content_type}\r\n".encode()
 
     content_length: bytes = f"Content-Length: {len(data)}\r\n\r\n".encode()
 
-    response: bytes = response_header + content_type + content_length + data
-    return response
+    return response_header + content_type_header + content_length + data
+    
 
 
 def not_found() -> bytes:
